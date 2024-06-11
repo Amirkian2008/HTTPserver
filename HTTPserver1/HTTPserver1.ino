@@ -2,26 +2,23 @@
 #include <ArduinoJson.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-//#include <OneWire.h>
-//#include <DallasTemperature.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include <LiquidCrystal_I2C.h>
 #include <HTTPClient.h>
-#define ADC_VREF_mV    3300.0 // in millivolt
-#define ADC_RESOLUTION 4096.0
-#define PIN_LM35       35 // ESP32 pin GPIO35(ADC0) connected to LM35
 
-const char* ssid = "Nikan";
-const char* password = "M158304h";
+const char* ssid = "YOUR SSID";
+const char* password = "YOUR PASSWORD";
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000);
 
-/*const int oneWireBus = 4;
+const int oneWireBus = 4;
 OneWire oneWire(oneWireBus);
 DallasTemperature sensors(&oneWire);
-*/
+
 void setup() {
   Serial.begin(115200);
 
@@ -29,7 +26,7 @@ void setup() {
   lcd.init();
   lcd.clear();
   lcd.backlight(); 
-
+  
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -38,7 +35,7 @@ void setup() {
   Serial.println("Connected to Wi-Fi");
 
   timeClient.begin();
-  //sensors.begin();
+  sensors.begin();
   }
 void loop() {
   timeClient.update();
@@ -62,17 +59,10 @@ void loop() {
 
 // Format Iran local time with seconds
   String iranTime =  String(hour) + ":" + String(minute) + ":" + String(second);
-   int adcVal = analogRead(PIN_LM35);
-  // convert the ADC value to voltage in millivolt
-  float milliVolt = adcVal * (ADC_VREF_mV / ADC_RESOLUTION);
-  // convert the voltage to the temperature in °C
-  float tempC = milliVolt / 10;
-  // convert the °C to °F
-  float tempF = tempC * 9 / 5 + 32;
-  //sensors.requestTemperatures();
- // float temperatureC = sensors.getTempCByIndex(0);
+  sensors.requestTemperatures();
+  float temperatureC = sensors.getTempCByIndex(0);
   DynamicJsonDocument jsonDoc(1024);
-  jsonDoc["temperature"] = tempC;
+  jsonDoc["temperature"] = temperatureC;
   jsonDoc["time"] = iranTime;
   String jsonString;
   serializeJson(jsonDoc, jsonString);
@@ -95,7 +85,7 @@ void loop() {
 }  
   lcd.setCursor(0, 0);
   lcd.print("TEMP: ");
-  lcd.print(tempC);
+  lcd.print(temperatureC);
   lcd.print(" C");
   lcd.setCursor(0, 1);
   lcd.print(iranTime);
